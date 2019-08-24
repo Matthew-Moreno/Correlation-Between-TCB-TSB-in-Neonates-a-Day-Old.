@@ -1,0 +1,763 @@
+---
+title: "Correlation between TCB & TSB"
+author: "Matthew Moreno"
+date: "5/24/2019"
+output: html_document
+---
+
+```{r , echo = FALSE , message = FALSE }
+
+library( dplyr )
+
+library( magrittr )
+
+library( ggplot2 )
+
+library( ggpubr)
+
+library( tibble )
+
+library( readr )
+
+library( pander )
+
+library( qqplotr )
+
+library( lmtest )
+
+library( boot )
+
+library( Hmisc )
+
+library( gridExtra)
+
+library( forcats )
+
+library( corrplot)
+
+library( BSDA )
+
+library( DT)
+
+
+
+setwd("~/Desktop/Stats/183/Projecto")
+
+
+
+Nursery_Data <- read_csv( file = "Nursery- Jan, Feb, March 2014.csv" )  %>%  as_tibble()  %>% na.exclude()
+
+
+Cor_Data <- read_csv( file = "Correlation between TSB and TCB Apri May and June 2014.csv")  %>% as_tibble()  %>% na.exclude()
+
+
+Nursery_Data$Gender <- Nursery_Data$Gender  %>% as.factor() 
+Cor_Data$Gender     <- Cor_Data$Gender      %>% as.factor()
+
+
+Cor_Data$`MR No`     <- Cor_Data$`MR No`      %>% as.character()
+
+
+levels( Nursery_Data$Gender )[ levels( Nursery_Data$Gender ) == "f" ] <- "F"
+levels( Nursery_Data$Gender )[ levels( Nursery_Data$Gender ) == "m" ] <- "M"
+levels( Cor_Data$Gender )[ levels( Cor_Data$Gender ) == "f" ] <- "F"
+levels( Cor_Data$Gender )[ levels( Cor_Data$Gender ) == "m" ] <- "M"
+
+
+
+
+T_Data <- Nursery_Data  %>% 
+    full_join( Cor_Data)  %>% 
+    select( TCB , TSB , `Birth Wt` , Gender )
+
+attach( T_Data)
+
+```
+
+&nbsp;
+
+# Data Vis
+
+&nbsp;
+
+```{r , echo = FALSE}
+
+
+.TSB_Max_Density <- density(T_Data$TSB)$x[143]   %>%  round( digits = 2)
+
+
+
+.TCB_Max_Density <- density(T_Data$TCB)$x[125]  %>% round( digits = 2)
+
+
+ggplot( data = T_Data ) +
+    geom_density( aes( x = TSB ) , fill = "#90D6D7" , alpha = 0.5) +
+    geom_density( aes( x = TCB) , fill = "#EFB1AF" , alpha = 0.5 ) +
+    geom_vline( xintercept = .TSB_Max_Density , lty = 3 ) +
+    geom_vline( xintercept = .TCB_Max_Density , lty = 3 ) +
+    labs( x = "Bilirubin Levels" , y = "Density") +
+    annotate( geom = "text" , label = "TSB" , x = 5.8 , y = 0.45  , color = "blue") +
+    annotate( geom = "text" , label = "TCB" , x = 9  , y = 0.45 , color = "red") +
+    annotate( geom = "text" , x = 5.8 , y = 0.40 , label = .TSB_Max_Density , color = "blue") +
+    annotate( geom = "text" , x = 9 , y = 0.40 , label = .TCB_Max_Density , color = "red") +
+    ggsave("TSB TCB Density.png")
+
+
+
+
+
+
+```
+
+&nbsp;
+
+```{r , echo = FALSE}
+
+ggplot( data = T_Data , aes( color = Gender) ) +
+    geom_density( aes( x = TSB , fill = Gender) , alpha = 0.2) +
+    geom_density( aes( x = TCB , fill = Gender) , alpha = 0.2 ) +
+    labs( x = "Bilirubin Levels" , y = "Density") +
+    annotate( geom = "text" , label = "TSB" , x = 6.65 , y = 0.5 ) +
+    annotate( geom = "text" , label = "TCB" , x = 8.4  , y = 0.45 ) +
+    theme( legend.position = "bottom") +
+    ggsave( "TSB TCB Gender Density.png")
+
+
+
+```
+
+&nbsp;
+
+# Two Sample T-Test Based on Gender
+
+&nbsp;
+
+```{r , echo = FALSE}
+
+
+.Female <- T_Data  %>% 
+    filter( Gender == "F" )
+
+
+
+.Male <- T_Data  %>% 
+    filter( Gender == "M" )
+
+
+
+
+
+
+
+
+t.test( x = .Male$TCB , y = .Female$TCB )  %>% pander()
+
+t.test( x = .Male$TSB , y = .Female$TSB )  %>% pander()
+
+
+
+```
+
+
+
+
+&nbsp;
+
+
+```{r , echo = FALSE}
+
+
+
+
+
+.TSB_Box <- ggplot( data = T_Data , aes( fill = Gender )) +
+    geom_boxplot( aes(  y = TSB) , alpha = .5 , show.legend = F ) 
+
+
+.TCB_Box <- ggplot( data = T_Data , aes( fill = Gender )) +
+    geom_boxplot( aes(  y = TCB) , alpha = 0.5  ) +
+    theme( legend.position = "bottom" )
+
+
+
+
+.Legend <- get_legend(.TCB_Box)
+
+.TCB_Box <- .TCB_Box + theme( legend.position = "none" )
+
+
+grid.arrange( .TSB_Box , .TCB_Box , .Legend , nrow = 2 , ncol = 2 , 
+              layout_matrix = rbind(c(1,2), c(3,3)),
+             widths = c(2.7, 2.7), heights = c(2.5, 0.2))
+
+
+
+
+
+```
+
+&nbsp;
+
+# Two Sample Paired T-Test: Difference of means.
+
+&nbsp;
+
+```{r , echo = FALSE}
+
+t.test( x = TSB , y = TCB , mu = 0 , paired = TRUE )  %>% pander()
+
+```
+
+
+&nbsp;
+
+# K.S Test
+
+&nbsp;
+
+```{r , echo = FALSE , message = FALSE , warning = FALSE}
+ks.test( x = TSB , y = TCB  )  %>% pander()
+```
+
+
+
+
+
+&nbsp;
+
+# TCB & TSB Plot.
+
+&nbsp;
+
+
+```{r , echo = FALSE , message = FALSE}
+
+
+ggplot( data = T_Data , aes( x = TCB , y = TSB , color = Gender )) +
+    geom_point() +
+    geom_smooth( se = FALSE , method = "lm") +
+    stat_regline_equation( size = 5 ) +
+    stat_cor( label.x.npc = 0.35 , label.y.npc = .95 , size = 4 ) +
+    labs( x = "TCB" , y = "TSB" , title = "TCB & TSB Relationship between Gender." ) +
+    theme( plot.title = element_text( hjust = 0.5 )) +
+    ggsave("TCB TSB Gender LM.eps")
+    
+
+
+```
+
+&nbsp;
+
+# TSB & TCB Correlation.
+
+&nbsp;
+
+```{r , echo = FALSE}
+
+cor.test( TSB, TCB )  %>% pander()
+
+```
+
+&nbsp;
+
+# TSB & Birth Weight Correlation.
+
+&nbsp;
+
+
+```{r , echo = FALSE}
+
+cor.test( TSB , `Birth Wt`)  %>% pander()
+
+```
+
+&nbsp;
+
+# TCB & Birth Weight Correlation.
+
+&nbsp;
+
+
+```{r , echo = FALSE}
+
+cor.test( TCB , `Birth Wt`)  %>% pander()
+
+```
+
+&nbsp;
+
+# TCB & Gender Correlation.
+
+&nbsp;
+
+```{r , echo = FALSE , message = FALSE}
+
+
+.Corr <- cor( x =  as.matrix(T_Data[1:3]))
+
+p.mat <- cor.mtest(T_Data[1:3])$p
+
+
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+
+
+corrplot( .Corr, method = "color" ,  col = col(200) , type="upper" , order = "hclust",  addCoef.col = "black", tl.col = "black", tl.srt = 45,  p.mat = p.mat , sig.level = 0.01 , insig = "blank", diag = T )
+
+```
+
+
+
+
+
+
+
+
+&nbsp;
+
+# Simple Linear Model 1: TSB ~ TCB
+
+&nbsp;
+
+```{r , echo = FALSE}
+
+Simple_GLM_1 <- glm( TSB ~ TCB , data = T_Data , family = gaussian())
+
+summary( Simple_GLM_1 )
+
+```
+
+&nbsp;
+
+# Simple Linear Model 2: TSB ~ TCB + Birth WT
+
+&nbsp;
+
+```{r , echo = FALSE}
+
+Simple_GLM_2 <- glm( TSB ~ TCB + `Birth Wt` , data = T_Data , family = gaussian())
+
+summary( Simple_GLM_2 )
+
+```
+
+
+&nbsp;
+
+# Simple Linear Model 3: TSB ~ TCB + Birth WT + Gender
+
+&nbsp;
+
+```{r , echo = FALSE}
+
+Simple_GLM_3 <- glm( TSB ~ TCB + `Birth Wt` + Gender , data = T_Data , family = gaussian())
+
+summary( Simple_GLM_3 )
+
+
+```
+
+&nbsp;
+
+# Simple Linear Model 4: TSB ~ TCB * Gender
+
+&nbsp;
+
+```{r , echo = FALSE}
+
+Simple_GLM_4 <- glm( TSB ~  Gender * TCB, data = T_Data , family = gaussian())
+
+summary( Simple_GLM_4 )
+
+```
+
+
+
+
+&nbsp;
+
+# Simple Linear Model 5: TSB ~ TCB * Birth Wt
+
+&nbsp;
+
+
+```{r , echo = FALSE}
+
+Simple_GLM_5 <- glm( TSB ~  `Birth Wt` * TCB, data = T_Data , family = gaussian())
+
+summary( Simple_GLM_5 )
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Model Conclusions
+
+&nbsp;
+
+__We should only use TCB to predict TSB as gender and birth weight are insignificant predictors in the model.__
+
+&nbsp;
+
+
+# Model 1 Assumptions Check:
+
+&nbsp;
+
+## Normality of Residuals
+
+&nbsp;
+
+
+```{r , echo = FALSE}
+
+ggplot( mapping =  aes( sample = Simple_GLM_1$residuals )) +
+    stat_qq_point() +
+    stat_qq_line( color = "red" ) + 
+    stat_qq_band( alpha = 0.35 ) +
+    labs( x = "Theoretical" , y = "Sample" , title = "Q-Q Plot for Normality" ) +
+    theme( plot.title = element_text( hjust = 0.5 )) +
+    ggsave( "M1 QQ.png")
+
+
+
+```
+
+&nbsp;
+
+```{r , echo = FALSE}
+
+shapiro.test( resid( Simple_GLM_1))  %>% pander()
+
+```
+
+
+&nbsp;
+
+## Equal Variance
+
+&nbsp;
+
+```{r , echo = FALSE}
+
+ggplot( mapping =  aes( x = Simple_GLM_1$fitted.values , y = Simple_GLM_1$residuals )) +
+    geom_point() +
+    geom_hline( yintercept = 0 , color = "red" , lwd = 0.80 ) +
+    labs( x = "Fitted Values" , y = "Residuals" , title = "Residuals VS Fitted Values") +
+    theme( plot.title = element_text( hjust = 0.5 )) +
+    ggsave( "M1 RF.eps")
+
+
+```
+
+&nbsp;
+
+```{r , echo = FALSE }
+bptest( Simple_GLM_1 )  %>% pander()
+```
+
+
+&nbsp;
+
+## Independent Residuals.
+
+&nbsp;
+
+
+```{r , echo = FALSE}
+dwtest( Simple_GLM_1 )  %>% pander()
+```
+
+&nbsp;
+
+# $10$ Fold Cross Validation.
+
+&nbsp;
+
+```{r , echo = FALSE }
+
+cv.glm( data = T_Data , glmfit = Simple_GLM_1 , K = 10)$delta 
+
+```
+
+&nbsp;
+
+# GLM With Log Transformation
+
+&nbsp;
+
+```{r}
+
+Simple_GLM_1_T <- glm( log(TSB) ~ TCB , data = T_Data , family = gaussian())
+
+summary( Simple_GLM_1_T )
+
+
+```
+
+
+
+# Model 1 Transformed Assumptions Check:
+
+&nbsp;
+
+## Normality of Residuals
+
+&nbsp;
+
+
+```{r , echo = FALSE}
+
+ggplot( mapping =  aes( sample = Simple_GLM_1_T$residuals )) +
+    stat_qq_point() +
+    stat_qq_line( color = "red" ) + 
+    stat_qq_band( alpha = 0.35 ) +
+    labs( x = "Theoretical" , y = "Sample" , title = "Q-Q Plot for Normality" ) +
+    theme( plot.title = element_text( hjust = 0.5 )) +
+    ggsave( "M2 QQ.png")
+
+
+
+```
+
+&nbsp;
+
+```{r , echo = FALSE}
+
+shapiro.test( resid( Simple_GLM_1_T))  %>% pander()
+
+```
+
+&nbsp;
+
+## Equal Variance
+
+&nbsp;
+
+```{r , echo = FALSE}
+
+ggplot( mapping =  aes( x = Simple_GLM_1_T$fitted.values , y = Simple_GLM_1_T$residuals )) +
+    geom_point() +
+    geom_hline( yintercept = 0 , color = "red" , lwd = 0.80 ) +
+    labs( x = "Fitted Values" , y = "Residuals" , title = "Residuals VS Fitted Values") +
+    theme( plot.title = element_text( hjust = 0.5 )) +
+    ggsave( "M2 RF.eps")
+
+
+```
+
+&nbsp;
+
+
+```{r , echo = FALSE }
+bptest( Simple_GLM_1_T )  %>% pander()
+```
+
+&nbsp;
+
+
+## Independent Residuals.
+
+&nbsp;
+
+
+```{r , echo = FALSE}
+dwtest( Simple_GLM_1_T )  %>% pander()
+```
+
+&nbsp;
+
+# $10$ Fold Cross Validation.
+
+&nbsp;
+
+```{r , echo = FALSE }
+
+cv.glm( data = T_Data , glmfit = Simple_GLM_1_T , K = 10)$delta 
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&nbsp;
+
+
+
+# TSB $25th$ $\&$ $75th$ Quantile
+
+&nbsp;
+
+### TSB
+
+&nbsp;
+
+```{r , echo = FALSE}
+
+.TSB_Summary <- summary( TSB )
+
+.TSB_Summary %>% pander()
+
+
+```
+
+&nbsp;
+
+### TCB
+
+&nbsp;
+
+```{r , echo = FALSE}
+
+.TCB_Summary <- summary( TCB )
+
+.TCB_Summary %>% pander()
+
+
+```
+&nbsp;
+
+## Sensitivity
+
+&nbsp;
+
+**The sensitivity is $0.9578$**
+
+&nbsp;
+
+```{r , echo = FALSE}
+
+TCB_75th <- T_Data  %>% 
+    filter( TCB < quantile( TCB , 0.75))
+
+
+TSB_95th <- TCB_75th  %>% 
+    filter( TSB > quantile(TSB , 0.95))
+
+Sensitivity <-  (nrow(TCB_75th) / (nrow(TCB_75th) + nrow(TSB_95th)))
+
+
+```
+
+&nbsp;
+
+## Specificity
+
+&nbsp;
+
+**The specificity is $0.5172$**
+
+&nbsp;
+
+```{r , echo = FALSE}
+
+TCB_75th <- T_Data  %>% 
+    filter( TCB > quantile( TCB , 0.75))
+
+
+TSB_95th <- TCB_75th  %>% 
+    filter( TSB < quantile(TSB , 0.95))
+
+
+Specificity <-  (nrow(TCB_75th) / (nrow(TCB_75th) + nrow(TSB_95th)))
+
+```
+
+&nbsp;
+
+## Confusion Matrix
+
+&nbsp;
+
+|   | + | - |
+|---|---|---|
+| + | 91  | 28  |
+| - | 4  | 30  |
+
+&nbsp;
+
+
+# Model Comparisons
+
+&nbsp;
+
+## Model 1 & Model 3
+
+&nbsp;
+
+
+```{r}
+anova( Simple_GLM_1 , Simple_GLM_3 , test = "LRT")
+```
+
+&nbsp;
+
+## Model 1 Transformed & Model 3
+
+&nbsp;
+
+```{r}
+Simple_GLM_3 <- glm( log(TSB) ~ TCB + `Birth Wt` + Gender , data = T_Data , family = gaussian())
+
+
+anova( Simple_GLM_1_T , Simple_GLM_3 , test = "LRT") 
+
+
+
+```
+
+
+&nbsp;
+
+# Appendix
+
+&nbsp;
+
+```{r}
+T_Data  %>% DT::datatable()
+```
+
+
+
+
+
