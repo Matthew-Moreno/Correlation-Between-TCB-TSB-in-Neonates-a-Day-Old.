@@ -2,7 +2,14 @@
 title: "Correlation between TCB & TSB"
 author: "Matthew Moreno"
 date: "5/24/2019"
-output: html_document
+output: 
+    html_document:
+        toc_depth: 2
+        toc: TRUE
+        toc_float: TRUE 
+        smooth_scroll: TRUE
+        theme: yeti
+        df_print: paged
 ---
 
 ```{r , echo = FALSE , message = FALSE }
@@ -37,7 +44,7 @@ library( corrplot)
 
 library( BSDA )
 
-library( DT)
+library( DT )
 
 
 
@@ -76,9 +83,11 @@ attach( T_Data)
 
 &nbsp;
 
-# Data Vis
+# *Exploratory Data Analysis*
 
 &nbsp;
+
+## *Density Distributions of TSB & TCB*
 
 ```{r , echo = FALSE}
 
@@ -111,6 +120,10 @@ ggplot( data = T_Data ) +
 
 &nbsp;
 
+## *Density Distributions of TSB & TCB by Gender*
+
+&nbsp;
+
 ```{r , echo = FALSE}
 
 ggplot( data = T_Data , aes( color = Gender) ) +
@@ -119,7 +132,7 @@ ggplot( data = T_Data , aes( color = Gender) ) +
     labs( x = "Bilirubin Levels" , y = "Density") +
     annotate( geom = "text" , label = "TSB" , x = 6.65 , y = 0.5 ) +
     annotate( geom = "text" , label = "TCB" , x = 8.4  , y = 0.45 ) +
-    theme( legend.position = "bottom") +
+    theme( legend.position = "bottom") 
     ggsave( "TSB TCB Gender Density.png")
 
 
@@ -128,7 +141,11 @@ ggplot( data = T_Data , aes( color = Gender) ) +
 
 &nbsp;
 
-# Two Sample T-Test Based on Gender
+# *Classical Statistical Tests*
+
+&nbsp;
+
+## *Two Sample T-Test Based on Gender*
 
 &nbsp;
 
@@ -198,7 +215,7 @@ grid.arrange( .TSB_Box , .TCB_Box , .Legend , nrow = 2 , ncol = 2 ,
 
 &nbsp;
 
-# Two Sample Paired T-Test: Difference of means.
+## *Two Sample Paired T-Test: Difference of means.*
 
 &nbsp;
 
@@ -211,7 +228,7 @@ t.test( x = TSB , y = TCB , mu = 0 , paired = TRUE )  %>% pander()
 
 &nbsp;
 
-# K.S Test
+## *Kolmogorov Smirnov Test*
 
 &nbsp;
 
@@ -225,7 +242,7 @@ ks.test( x = TSB , y = TCB  )  %>% pander()
 
 &nbsp;
 
-# TCB & TSB Plot.
+# *TCB & TSB Plot*
 
 &nbsp;
 
@@ -248,7 +265,11 @@ ggplot( data = T_Data , aes( x = TCB , y = TSB , color = Gender )) +
 
 &nbsp;
 
-# TSB & TCB Correlation.
+# *Correlation*
+
+&nbsp;
+
+## *TSB & TCB Correlation*
 
 &nbsp;
 
@@ -260,7 +281,7 @@ cor.test( TSB, TCB )  %>% pander()
 
 &nbsp;
 
-# TSB & Birth Weight Correlation.
+## *TSB & Birth Weight Correlation*
 
 &nbsp;
 
@@ -273,7 +294,7 @@ cor.test( TSB , `Birth Wt`)  %>% pander()
 
 &nbsp;
 
-# TCB & Birth Weight Correlation.
+## *TCB & Birth Weight Correlation*
 
 &nbsp;
 
@@ -286,7 +307,7 @@ cor.test( TCB , `Birth Wt`)  %>% pander()
 
 &nbsp;
 
-# TCB & Gender Correlation.
+## *TCB & Gender Correlation*
 
 &nbsp;
 
@@ -305,16 +326,13 @@ corrplot( .Corr, method = "color" ,  col = col(200) , type="upper" , order = "hc
 
 ```
 
+&nbsp;
 
-
-
-
-
-
+# *Model Building*
 
 &nbsp;
 
-# Simple Linear Model 1: TSB ~ TCB
+## *Simple Linear Model 1: TSB ~ TCB*
 
 &nbsp;
 
@@ -328,7 +346,7 @@ summary( Simple_GLM_1 )
 
 &nbsp;
 
-# Simple Linear Model 2: TSB ~ TCB + Birth WT
+## *Simple Linear Model 2: TSB ~ TCB + Birth WT*
 
 &nbsp;
 
@@ -343,7 +361,7 @@ summary( Simple_GLM_2 )
 
 &nbsp;
 
-# Simple Linear Model 3: TSB ~ TCB + Birth WT + Gender
+## *Simple Linear Model 3: TSB ~ TCB + Birth WT + Gender*
 
 &nbsp;
 
@@ -358,7 +376,7 @@ summary( Simple_GLM_3 )
 
 &nbsp;
 
-# Simple Linear Model 4: TSB ~ TCB * Gender
+## _Simple Linear Model 4: TSB ~ TCB * Gender_
 
 &nbsp;
 
@@ -375,7 +393,7 @@ summary( Simple_GLM_4 )
 
 &nbsp;
 
-# Simple Linear Model 5: TSB ~ TCB * Birth Wt
+## _Simple Linear Model 5: TSB ~ TCB * Birth Wt_
 
 &nbsp;
 
@@ -389,44 +407,20 @@ summary( Simple_GLM_5 )
 ```
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # Model Conclusions
 
 &nbsp;
 
-__We should only use TCB to predict TSB as gender and birth weight are insignificant predictors in the model.__
+__The Best preforming model to predict TSB levels in neonates is to only use TCB, since gender and birth weight are insignificant predictors in the model.__
 
 &nbsp;
 
 
-# Model 1 Assumptions Check:
+# *Model 1 Assumptions Check:*
 
 &nbsp;
 
-## Normality of Residuals
+## *Normality of Residuals*
 
 &nbsp;
 
@@ -456,7 +450,7 @@ shapiro.test( resid( Simple_GLM_1))  %>% pander()
 
 &nbsp;
 
-## Equal Variance
+## *Equal Variance*
 
 &nbsp;
 
@@ -481,7 +475,7 @@ bptest( Simple_GLM_1 )  %>% pander()
 
 &nbsp;
 
-## Independent Residuals.
+## *Independent Residuals.*
 
 &nbsp;
 
@@ -492,7 +486,7 @@ dwtest( Simple_GLM_1 )  %>% pander()
 
 &nbsp;
 
-# $10$ Fold Cross Validation.
+# *10 Fold Cross Validation*
 
 &nbsp;
 
@@ -504,7 +498,7 @@ cv.glm( data = T_Data , glmfit = Simple_GLM_1 , K = 10)$delta
 
 &nbsp;
 
-# GLM With Log Transformation
+# *GLM With Log Transformation*
 
 &nbsp;
 
@@ -519,11 +513,11 @@ summary( Simple_GLM_1_T )
 
 
 
-# Model 1 Transformed Assumptions Check:
+# *Model 1 Transformed Assumptions Check:*
 
 &nbsp;
 
-## Normality of Residuals
+## *Normality of Residuals*
 
 &nbsp;
 
@@ -552,7 +546,7 @@ shapiro.test( resid( Simple_GLM_1_T))  %>% pander()
 
 &nbsp;
 
-## Equal Variance
+## *Equal Variance*
 
 &nbsp;
 
@@ -578,7 +572,7 @@ bptest( Simple_GLM_1_T )  %>% pander()
 &nbsp;
 
 
-## Independent Residuals.
+## *Independent Residuals*
 
 &nbsp;
 
@@ -589,7 +583,7 @@ dwtest( Simple_GLM_1_T )  %>% pander()
 
 &nbsp;
 
-# $10$ Fold Cross Validation.
+# *10 Fold Cross Validation*
 
 &nbsp;
 
@@ -601,34 +595,15 @@ cv.glm( data = T_Data , glmfit = Simple_GLM_1_T , K = 10)$delta
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 &nbsp;
 
 
 
-# TSB $25th$ $\&$ $75th$ Quantile
+# *TSB 25th & 75th Quantile*
 
 &nbsp;
 
-### TSB
+### *TSB*
 
 &nbsp;
 
@@ -643,7 +618,7 @@ cv.glm( data = T_Data , glmfit = Simple_GLM_1_T , K = 10)$delta
 
 &nbsp;
 
-### TCB
+### *TCB*
 
 &nbsp;
 
@@ -657,7 +632,7 @@ cv.glm( data = T_Data , glmfit = Simple_GLM_1_T , K = 10)$delta
 ```
 &nbsp;
 
-## Sensitivity
+## *Sensitivity*
 
 &nbsp;
 
@@ -681,7 +656,7 @@ Sensitivity <-  (nrow(TCB_75th) / (nrow(TCB_75th) + nrow(TSB_95th)))
 
 &nbsp;
 
-## Specificity
+## *Specificity*
 
 &nbsp;
 
@@ -705,7 +680,7 @@ Specificity <-  (nrow(TCB_75th) / (nrow(TCB_75th) + nrow(TSB_95th)))
 
 &nbsp;
 
-## Confusion Matrix
+## *Confusion Matrix*
 
 &nbsp;
 
@@ -717,11 +692,11 @@ Specificity <-  (nrow(TCB_75th) / (nrow(TCB_75th) + nrow(TSB_95th)))
 &nbsp;
 
 
-# Model Comparisons
+# *Model Comparisons*
 
 &nbsp;
 
-## Model 1 & Model 3
+## *Model 1 & Model 3*
 
 &nbsp;
 
@@ -732,7 +707,7 @@ anova( Simple_GLM_1 , Simple_GLM_3 , test = "LRT")
 
 &nbsp;
 
-## Model 1 Transformed & Model 3
+## *Model 1 Transformed & Model 3*
 
 &nbsp;
 
@@ -749,7 +724,7 @@ anova( Simple_GLM_1_T , Simple_GLM_3 , test = "LRT")
 
 &nbsp;
 
-# Appendix
+# *Appendix*
 
 &nbsp;
 
